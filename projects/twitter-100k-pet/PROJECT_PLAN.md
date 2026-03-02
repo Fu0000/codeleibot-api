@@ -267,5 +267,6 @@ Hook（抓注意）→ Proof（给证据）→ Action（给动作）
 - 问题追踪：`projects/twitter-100k-pet/ISSUES.md`
 - OpenFang借鉴映射：`projects/twitter-100k-pet/OPENFANG_MAPPING.md`
 - 外部案例学习沉淀：`projects/twitter-100k-pet/LEARNINGS.md`
+- 内容工厂流程：`projects/twitter-100k-pet/CONTENT_FACTORY.md`
 
 > 维护规则：每完成一个里程碑或关键决策，更新本文件“当前已完成”和“Next 事项”。
