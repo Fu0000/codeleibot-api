@@ -1,0 +1,10 @@
+# local secrets
+projects/twitter-100k-pet/automation/.env
+
+# runtime outputs
+projects/twitter-100k-pet/logs/
+projects/twitter-100k-pet/data/hotspots/raw/
+projects/twitter-100k-pet/data/hotspots/analysis/
+projects/twitter-100k-pet/data/hotspots/daily/
+projects/twitter-100k-pet/CONTENT_QUEUE/
+projects/twitter-100k-pet/generated-comics/
