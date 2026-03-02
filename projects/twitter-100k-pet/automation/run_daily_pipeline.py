@@ -33,6 +33,9 @@ DEFAULT_SOURCES = [
     {"name": "Google News Tech", "url": "https://news.google.com/rss/headlines/section/topic/TECHNOLOGY?hl=zh-CN&gl=CN&ceid=CN:zh-Hans"},
 ]
 
+TOPHUB_URL = 'https://tophub.today/'
+MOMOYU_TOP_API = 'https://momoyu.cc/api/hot/top'
+
 
 def now_parts():
     now = dt.datetime.now()
@@ -88,6 +91,94 @@ def load_manual_topics() -> List[Dict[str, Any]]:
             out.append(json.loads(line))
         except Exception:
             pass
+    return out
+
+
+def fetch_tophub_topics(limit: int = 20) -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    try:
+        home = requests.get(TOPHUB_URL, timeout=30, headers={'User-Agent': 'Mozilla/5.0'}).text
+        # 先拿首页榜单入口
+        ch_re = re.compile(r'<a href="(/n/[^"]+)">[\s\S]*?<div class="zb-kc-Cb">([^<]+)<span>([^<]*)</span>', re.M)
+        channels = []
+        for m in ch_re.finditer(home):
+            channels.append({
+                'path': m.group(1),
+                'platform': m.group(2).strip(),
+                'board': m.group(3).strip(),
+            })
+
+        # 强制多源：优先平台
+        preferred = ['知乎', '微博', '百度', '抖音', '哔哩哔哩', '36氪']
+        selected = []
+        for p in preferred:
+            for ch in channels:
+                if p in ch['platform'] and ch not in selected:
+                    selected.append(ch)
+                    break
+        for ch in channels:
+            if ch not in selected:
+                selected.append(ch)
+
+        row_re = re.compile(
+            r'<tr>\s*<td align="center">(\d+)\.</td>[\s\S]*?'
+            r'<div><a href="([^"]+)"[^>]*>([\s\S]*?)</a></div>\s*'
+            r'<div class="item-desc">([\s\S]*?)</div>',
+            re.M,
+        )
+
+        per_board_limit = 2
+        for ch in selected[:8]:
+            board_url = f"https://tophub.today{ch['path']}"
+            bh = requests.get(board_url, timeout=30, headers={'User-Agent': 'Mozilla/5.0'}).text
+            board_count = 0
+            for m in row_re.finditer(bh):
+                title = re.sub(r'<[^>]+>', '', m.group(3)).strip()
+                if not title:
+                    continue
+                out.append({
+                    'title': title,
+                    'url': m.group(2).strip(),
+                    'summary': f"{ch['platform']}{ch['board']} 榜单第{m.group(1)}，热度 {re.sub(r'<[^>]+>', '', m.group(4)).strip()}",
+                    'publishedAt': '',
+                    'source': f"TopHub-{ch['platform']}{ch['board']}",
+                    'rank': int(m.group(1)),
+                    'heatRaw': re.sub(r'<[^>]+>', '', m.group(4)).strip(),
+                })
+                board_count += 1
+                if board_count >= per_board_limit:
+                    break
+                if len(out) >= limit:
+                    return out
+            if len(out) >= limit:
+                return out
+    except Exception:
+        return out
+    return out
+
+
+def fetch_momoyu_topics(limit: int = 20) -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    try:
+        r = requests.get(MOMOYU_TOP_API, timeout=30, headers={'User-Agent': 'Mozilla/5.0'})
+        j = r.json()
+        for idx, x in enumerate(j.get('data', []), 1):
+            title = (x.get('title') or '').strip()
+            if not title:
+                continue
+            out.append({
+                'title': title,
+                'url': x.get('link', ''),
+                'summary': f"{x.get('name','摸摸鱼热榜')} 第{idx}，热度 {x.get('extra','')}",
+                'publishedAt': '',
+                'source': f"Momoyu-{x.get('name','hot')}",
+                'rank': idx,
+                'heatRaw': x.get('extra', ''),
+            })
+            if len(out) >= limit:
+                break
+    except Exception:
+        return out
     return out
 
 
@@ -211,6 +302,14 @@ def main():
     cfg = load_config()
 
     topics = []
+
+    # 1) 热榜直连源（优先）
+    hot_topics = []
+    hot_topics.extend(fetch_tophub_topics(limit=max(args.limit, 8)))
+    hot_topics.extend(fetch_momoyu_topics(limit=max(args.limit, 8)))
+    topics.extend(hot_topics)
+
+    # 2) RSS 常规源（补足）
     for s in cfg.get('sources', DEFAULT_SOURCES):
         try:
             items = fetch_rss(s['url'])
@@ -219,6 +318,8 @@ def main():
             topics.extend(items)
         except Exception:
             continue
+
+    # 3) 手工补充
     topics.extend(load_manual_topics())
 
     # dedupe by title
@@ -230,7 +331,26 @@ def main():
             continue
         seen.add(key)
         uniq.append(t)
-    topics = uniq[: max(args.limit, 3)]
+
+    # 先保留热榜源，再用RSS补足；并限制单源占比，避免被某一站刷屏
+    hot_first = [x for x in uniq if str(x.get('source', '')).startswith('TopHub-') or str(x.get('source', '')).startswith('Momoyu-')]
+    other = [x for x in uniq if x not in hot_first]
+    merged = hot_first + other
+
+    source_cap = 3
+    picked = []
+    source_count: Dict[str, int] = {}
+    for t in merged:
+        src = str(t.get('source', ''))
+        if src:
+            if source_count.get(src, 0) >= source_cap:
+                continue
+            source_count[src] = source_count.get(src, 0) + 1
+        picked.append(t)
+        if len(picked) >= max(args.limit, 3):
+            break
+
+    topics = picked
 
     raw_path = RAW_DIR / day / f'{hour}.json'
     raw_path.write_text(json.dumps({'timestamp': stamp, 'mode': args.mode, 'topics': topics}, ensure_ascii=False, indent=2), encoding='utf-8')

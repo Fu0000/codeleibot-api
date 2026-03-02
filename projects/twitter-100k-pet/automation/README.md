@@ -2,6 +2,7 @@
 
 ## What it does
 - Fetch hotspots from configured RSS sources
+- Fetch direct hot topics from TopHub and Momoyu APIs/pages
 - Analyze with grok2api (`grok-3-mini`) first
 - Force `stream=false` for grok text calls (this endpoint may 401 on stream=true)
 - Retry 3 times on grok failures
@@ -33,6 +34,13 @@ bash automation/install_cron.sh
 ## Schedule
 - Quick run: every 2 hours
 - Deep run: 12:30 and 20:30 daily
+- Timeout: each run is capped at 60 minutes (`timeout 60m`)
 
 ## Logs
 - `logs/pipeline.log`
+
+## Current source status
+- ✅ TopHub: usable via HTML (board entry + board detail parsing)
+- ✅ Momoyu: usable via `/api/hot/top`
+- ⚠️ 360 `api.mse.360.cn`: currently returns `errno=1001` without browser-session params/signature
+- ⚠️ AttentionVC article page: dynamic rendering, requires browser network capture to lock final API path

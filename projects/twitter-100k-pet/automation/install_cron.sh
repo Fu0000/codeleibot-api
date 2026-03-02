@@ -14,8 +14,8 @@ SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 # Twitter content pipeline (main-agent + timer)
-0 */2 * * * cd /opt/openclaw/workspace-1/projects/twitter-100k-pet && [ -f automation/.env ] && source automation/.env; /usr/bin/flock -n /tmp/twitter_pipeline.lock python3 automation/run_daily_pipeline.py --mode quick --limit 6 >> logs/pipeline.log 2>&1
-30 12,20 * * * cd /opt/openclaw/workspace-1/projects/twitter-100k-pet && [ -f automation/.env ] && source automation/.env; /usr/bin/flock -n /tmp/twitter_pipeline.lock python3 automation/run_daily_pipeline.py --mode deep --limit 10 >> logs/pipeline.log 2>&1
+0 */2 * * * cd /opt/openclaw/workspace-1/projects/twitter-100k-pet && [ -f automation/.env ] && source automation/.env; /usr/bin/flock -n /tmp/twitter_pipeline.lock timeout 60m python3 automation/run_daily_pipeline.py --mode quick --limit 6 >> logs/pipeline.log 2>&1
+30 12,20 * * * cd /opt/openclaw/workspace-1/projects/twitter-100k-pet && [ -f automation/.env ] && source automation/.env; /usr/bin/flock -n /tmp/twitter_pipeline.lock timeout 60m python3 automation/run_daily_pipeline.py --mode deep --limit 10 >> logs/pipeline.log 2>&1
 CRON
 
 crontab "$CRON_TMP"
