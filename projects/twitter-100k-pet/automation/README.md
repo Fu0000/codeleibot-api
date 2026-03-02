@@ -3,6 +3,7 @@
 ## What it does
 - Fetch hotspots from configured RSS sources
 - Analyze with grok2api (`grok-3-mini`) first
+- Force `stream=false` for grok text calls (this endpoint may 401 on stream=true)
 - Retry 3 times on grok failures
 - Auto-fallback to Google 3.1 Flash for analysis
 - Generate comic images via Google 3.1 Flash image model

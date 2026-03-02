@@ -112,6 +112,8 @@ def analyze_with_grok(topic: Dict[str, Any], retries=3) -> Optional[Dict[str, An
         'model': GROK_MODEL,
         'messages': [{'role': 'user', 'content': prompt}],
         'temperature': 0.3,
+        # 关键：该服务 stream=true 容易触发 401，固定关闭流式
+        'stream': False,
     }
 
     for i in range(1, retries + 1):
