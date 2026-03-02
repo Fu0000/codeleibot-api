@@ -9,4 +9,5 @@
 - 下一事项索引：
   - 移动端专项优化：见 `PROJECT_PLAN.md` 第9节 Next-A
   - 性能优化：见 `PROJECT_PLAN.md` 第9节 Next-B
+  - 外部增长案例学习沉淀：见 `projects/twitter-100k-pet/LEARNINGS.md`
 - 维护方式：重大里程碑更新本索引；日常执行记录写入 `memory/YYYY-MM-DD.md`。

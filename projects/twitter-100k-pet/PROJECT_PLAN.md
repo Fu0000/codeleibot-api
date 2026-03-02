@@ -266,5 +266,6 @@ Hook（抓注意）→ Proof（给证据）→ Action（给动作）
 - 每日执行日志：`memory/2026-03-02.md`（后续按日期追加）
 - 问题追踪：`projects/twitter-100k-pet/ISSUES.md`
 - OpenFang借鉴映射：`projects/twitter-100k-pet/OPENFANG_MAPPING.md`
+- 外部案例学习沉淀：`projects/twitter-100k-pet/LEARNINGS.md`
 
 > 维护规则：每完成一个里程碑或关键决策，更新本文件“当前已完成”和“Next 事项”。
